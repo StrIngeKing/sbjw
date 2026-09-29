@@ -1,19 +1,25 @@
 # 可靠性守卫 / Reliability Guard (`dsh-reliability-guard`)
 
-A reliability guard for **DeepSeek Harness 0.1.7-rc.2 and 0.2.0-rc.1**. It adds deterministic
-gates around the agent loop to reduce guessing, repeated no-progress calls,
-false completion, and irreversible mistakes.
+A reliability guard for **DeepSeek Harness**. Starting with 1.1.7, the package deliberately does **not** declare `@deepseek-ai/dsh` / `@deepseek-ai/dsh-*` host-version peers, so DSH prerelease updates are not blocked solely by a stale version range. It adds deterministic gates around the agent loop to reduce guessing, repeated no-progress calls, false completion, and irreversible mistakes.
 
-适用于 **DeepSeek Harness 0.1.7-rc.2 与 0.2.0-rc.1** 的可靠性守卫插件。它在 Agent 循环周围增加确定性门禁，
-用于减少猜测、无进展的重复调用、假完成和不可逆错误。
+适用于 **DeepSeek Harness** 的可靠性守卫插件。自 1.1.7 起，包清单不再声明 `@deepseek-ai/dsh` / `@deepseek-ai/dsh-*` 宿主版本 peer，因此 DSH 的 RC/小版本更新不会仅因为旧版本范围而阻止插件加载。它在 Agent 循环周围增加确定性门禁，用于减少猜测、无进展的重复调用、假完成和不可逆错误。
 
 Every gate is computed from program state and tool results. Nothing here asks a
 model to self-assess, and nothing here replaces an official DSH capability.
 
-- **Version / 版本：** 1.1.5
-- **Runtime:** DSH `0.1.7-rc.2` or `0.2.0-rc.1`, Node ≥ 20
-- **Dependencies:** none beyond the DSH packages it declares as peers
+- **Version / 版本：** 1.1.8
+- **Runtime:** DSH host-version admission is unpinned; Node ≥ 20
+- **Dependencies:** `@deepseek-ai/cordis` 4.0.4 and `@deepseek-ai/schemastery` 3.18.4 remain explicit peers; DSH host modules are supplied by the Harness runtime resolver
 - **Build step for consumers:** none — the published artifact is plain ESM
+
+### Host-version compatibility policy / 宿主版本兼容策略
+
+From 1.1.7 onward, `package.json` intentionally omits peers named `@deepseek-ai/dsh` and `@deepseek-ai/dsh-*`. DSH's Loader treats a missing DSH host peer as **no version constraint**, which avoids repeated plugin releases solely to follow `0.x` prerelease numbers. This does **not** promise API compatibility with every future DSH build: if DSH removes or changes an API the plugin actually uses, activation can still fail at import/runtime and that release must be adapted normally.
+
+自 1.1.7 起，`package.json` 有意不声明 `@deepseek-ai/dsh` 与 `@deepseek-ai/dsh-*` peer。DSH Loader 会把“未声明 DSH host peer”视为**没有版本约束**，因此后续 RC/小版本不会只因版本号变化而被兼容门拦截。这不等于承诺未来所有 DSH API 都兼容：若官方真正删除/改变插件使用的 API，插件仍可能在加载或运行时失败，届时需要真实适配。
+
+The source `devDependencies` may stay pinned to a known DSH train for reproducible development; those entries are not runtime compatibility constraints.
+开发用 `devDependencies` 可以继续固定在已知 DSH 版本线上以保持复现性；它们不参与运行时兼容门。
 
 ---
 
@@ -103,7 +109,7 @@ Desktop host when that service is unavailable.
 结构化字段不可用时，会仅剥离 DSH 的独立展示标记行（如 `[stdout]` / `[exit code: 0]`）
 再做精确布尔绑定。父目录重列所需的精确 stat 优先使用 DSH fs 服务，服务不可用时
 仅对当前宿主可识别的本机绝对路径使用原生 stat 兜底。相对路径按调用显式
-`workdir` 解析。自 1.1.5 起，DSH Desktop 自动拼接的
+`workdir` 解析。自 1.1.1 起，DSH Desktop 自动拼接的
 `[Console]::OutputEncoding = ...; $OutputEncoding = ...;` 编码前导被作为精确匹配的
 宿主传输脚手架跳过，不再让后续 `Test-Path` / `Get-FileHash` / `Get-ChildItem`
 因 `scopeUncertain` 被整段丢弃。其它未知 PowerShell stage 仍保持 fail-closed。
@@ -121,7 +127,7 @@ or prose claim is not evidence and cannot establish the deleted file's prior sta
 
 若删除后可能需要独立评审，建议在删除前或删除命令中保留真实工具输出的前态证据：
 目标路径、size 与 SHA256。模型自行写出的字节数、哈希或文字声明不构成证据，也不能
-证明被删文件此前确实存在。1.1.5 还会在可精确解析的 mutation 执行前记录 guard 自己
+证明被删文件此前确实存在。1.1.1 还会在可精确解析的 mutation 执行前记录 guard 自己
 通过文件系统 `stat` 观察到的 `present/type/size`，并把它带入诊断与独立评审上下文；
 这能证明“该精确目标在删除前确实存在”，但它不是内容哈希，也不会冒充对已删除字节
 内容的审查证据。
@@ -233,6 +239,7 @@ that a retrieved page supports a claim. / 按主题计时并加强相关性；�
    run `Test-Path -LiteralPath 'gone.txt'`, or re-list its exact parent (the guard
    also performs an exact absence stat). Generic test success cannot settle this
    reconciliation. Older `present` history is labelled superseded, not erased.
+   The covering verification must be a **later, separate tool call**. A read launched in the same parallel batch as the mutation cannot verify a change that has not completed yet. / 覆盖核查必须发生在变更之后，并使用独立的后续调用；与变更同批并行的读取不算覆盖证据。
 
 先查序号和原命令，再声明全部目标与预期状态。补录不会直接通过，必须独立验证；
 无关读取、旧验证、普通测试成功和评审 PASS 均不能消除这项补录风险。空目标、重复
@@ -243,6 +250,8 @@ For a declared unknown, `resolve_unknown` takes `unknown_id`, a newer successful
 `evidence_seq`, and a `reason`. It records the caller's evidence-linked explanation;
 it does not waive mutation or review gates. / 未知项可通过上述参数关联较新的成功检查
 和解释关闭；记录仍保留，不绕过变更或评审门禁。
+
+The order is strict: **write the declaration -> run a new successful verification -> call `resolve_unknown` with that verification's `evidence_seq`**. A verification older than the declaration is rejected. Explicit uncertainty declarations may be plain, bulleted, or Markdown-bold (for example `未验证: X`, `- 未验证: X`, or `**未验证：X**`). / 顺序必须是“声明 → 新核查 → resolve”；旧证据不能关闭新声明。声明允许朴素、列表或 Markdown 加粗形式。
 
 ### 1.0.7 deletion and review details / 删除与评审细节
 
@@ -300,7 +309,7 @@ plugin.
 
 ```sh
 # from a packed tarball
-dsh plugin --profile <name> add /abs/path/dsh-reliability-guard-1.1.5.tgz
+dsh plugin --profile <name> add /abs/path/dsh-reliability-guard-1.1.8.tgz
 
 # from a local checkout
 dsh plugin --profile <name> add /abs/path/dsh-reliability-guard
@@ -340,7 +349,7 @@ A successful call returns a report like:
 
 ```text
 reliability-guard diagnostics v1 (2026-01-01T00:00:00.000Z)
-plugin version / 插件版本: 1.1.5
+plugin version / 插件版本: 1.1.8
 toolsRegistered: true
 mode: balanced — identical-repeat block at 5, semantic 3, no-op shell 3, blind retries 2, stall 6
 session: <id>
@@ -352,9 +361,7 @@ counters: (none)
 
 ### Shell-query runtime diagnostic / Shell 查询运行时诊断
 
-When investigating a shell verification that appears as `targets=[]`, call
-`reliability_guard(detail:true)`. A bounded diagnostic block records
-for recent command-shaped calls showing the runtime `exec.name`, argument keys,
+The temporary shell-query trace is **off by default** in 1.1.6. When investigating a shell verification that appears as `targets=[]`, set `diagnostics.runtimeShellTrace: true`, reproduce once, then call `reliability_guard(detail:true)`. A bounded diagnostic block records the runtime `exec.name`, argument keys,
 `typeof args.command`, a redacted 200-character command preview, whether
 `shellCommandOf(...)` recognized the call, and the outputs of both
 `verificationQueries(...)` and direct `shellReadQueries(...)`. This is
@@ -387,6 +394,32 @@ Disable without uninstalling (keeps the dependency, stops the guard):
 
 ---
 
+## Context / token cost
+
+Reliability Guard is designed so ordinary read-only work pays little overhead and
+high-risk mutations pay for stronger verification/review only when needed. In
+1.1.6 the default static policy is `minimal` (804 characters / 104 English words,
+versus 2769 / 443 for the previous `compact` default). The section is prefix-stable:
+the same configuration renders the same bytes every request, so a host that supports
+prefix caching can reuse it; whether cached tokens are billed differently is host-specific.
+
+The default low-overhead profile also uses one completion correction per turn, one
+independent reviewer round for HIGH/CRITICAL work, no automatic full evidence digest,
+and no runtime shell trace. Safety gates remain active: a mutation still needs covering
+verification, and HIGH/CRITICAL work still requires independent review.
+
+For maximum context savings on a trusted/read-only workflow you can additionally disable
+features explicitly (`completionGate`, `freshnessGate`, `windows`, or diagnostics), but
+doing so removes the corresponding protection/observability rather than merely optimizing it.
+
+### Usage patterns that save work
+
+- Batch a bounded set of targets in one mutation call; the ledger still records each target.
+- Keep mutation and verification commands direct instead of hiding them behind opaque scripts.
+- For deletion receipts, prefer the shortest exact command: `Test-Path -LiteralPath '<target>'`.
+- Give the independent reviewer concrete ledger pre-state, scope and verification evidence; narrative claims are not evidence.
+- Keep heavy gates for mutation/audit work; do not enable extra diagnostics or full prompt verbosity for pure prose/read-only tasks unless needed.
+
 ## Configuration
 
 Every field is declared with `@deepseek-ai/schemastery` and documented in
@@ -399,17 +432,24 @@ Settings surface can retune a running session without a remount.
     mode: balanced            # balanced | strict | maximum
     maxBlindRetries: 2
     semanticLoopThreshold: 3
+    prompt:
+      enabled: true
+      verbosity: minimal      # minimal | compact | full
     review:
       enabled: true
       highRiskOnly: true
-      maxRounds: 2
+      maxRounds: 1            # set 2 if you want an automatic corrective re-review
     completionGate:
       enabled: true
+      maxInjectionsPerTurn: 1
     freshnessGate:
       enabled: true
+    evidence:
+      injectDigest: false     # gap-specific correction stays enabled
     diagnostics:
       enabled: true
       includeSensitiveContent: false
+      runtimeShellTrace: false
 ```
 
 ### Modes
@@ -453,10 +493,10 @@ warned twice, so the official advisory is never superseded by an earlier stop.
 | `review.enabled` | `true` | Independent reviewer gate |
 | `review.highRiskOnly` | `true` | Review only HIGH/CRITICAL (plus multi-file, see below) |
 | `review.multiFileThreshold` | `3` | Distinct files in one turn that also triggers review |
-| `review.maxRounds` | `2` | Maximum reviewer rounds |
+| `review.maxRounds` | `1` | Reviewer rounds; set `2` for one automatic corrective re-review |
 | `completionGate.enabled` | `true` | Block a turn that is not ready to end |
 | `completionGate.requireVerificationForMutation` | `true` | A mutation needs a covering verification |
-| `completionGate.maxInjectionsPerTurn` | `2` | Corrective messages per turn |
+| `completionGate.maxInjectionsPerTurn` | `1` | Corrective messages per turn |
 | `freshnessGate.enabled` | `true` | External-fact freshness gate |
 | `freshnessGate.maxAgeMinutes` | `30` | How long a retrieval stays fresh |
 | `freshnessGate.topics` | 13 markers | Substrings that mark a claim as an external fact |
@@ -465,12 +505,13 @@ warned twice, so the official advisory is never superseded by an earlier stop.
 | `windows.warnOnCrlfSensitivePatch` | `true` | CRLF/LF mismatch on a literal edit |
 | `evidence.enabled` | `true` | Evidence ledger |
 | `evidence.maxRecords` | `200` | Ledger capacity |
-| `evidence.injectDigest` | `true` | Attach the evidence digest with a correction |
-| `evidence.maxDigestChars` | `2400` | Digest cap |
+| `evidence.injectDigest` | `false` | Attach the full evidence digest with a correction |
+| `evidence.maxDigestChars` | `1600` | Digest cap when enabled |
 | `prompt.enabled` | `true` | Register the policy section |
-| `prompt.verbosity` | `compact` | `compact` (~2.8k chars) or `full` (adds the verification matrix) |
+| `prompt.verbosity` | `minimal` | `minimal` (804 chars), `compact` (~2.8k chars), or `full` |
 | `diagnostics.enabled` | `true` | Publish `reliability_guard` |
 | `diagnostics.includeSensitiveContent` | `false` | Allow bounded argument previews in diagnostics |
+| `diagnostics.runtimeShellTrace` | `false` | Keep the 1.1.3 shell-query runtime trace for troubleshooting |
 | `diagnostics.logLevel` | `info` | `debug`/`info`/`warn`/`error` |
 
 ---
@@ -518,6 +559,7 @@ Fail-closed is reserved for genuinely irreversible or inconsistent states:
 - HIGH/CRITICAL mutation with no stated rollback or verification plan → denied,
   or routed to approval for CRITICAL. There is no "allow anyway" path.
 - A verification that reports any failure → never counted as verification.
+- A failed **read/verification** command is recorded as a failed check, not as an `unexplained failure`; `resolve_failure` is for non-read task failures. / 读取类报错属于失败核查，不进入 unexplained failures。
 - An unreadable reviewer report → counted as FAIL.
 
 Everything else degrades to advice rather than stopping work:
@@ -548,19 +590,19 @@ log, and the production `AgentLoop` mounted by the official
 fixtures; filesystem regressions also execute real PowerShell against isolated
 temporary files. These tests do not call a live DeepSeek model.
 
-See [`docs/ADR-0001-reliability-guard.md`](docs/ADR-0001-reliability-guard.md)
+See [`docs/ADR-0001-reliability-guard.md`](https://github.com/StrIngeKing/dsh-reliability-guard/blob/main/docs/ADR-0001-reliability-guard.md)
 for the architecture decisions and the seam inventory this plugin is built on,
 and [`CHANGELOG.md`](CHANGELOG.md) for release history.
 
 
 ## Further reading / 进一步阅读
 
-- [Detailed overview: capabilities, boundaries, and token cost](docs/INTRODUCTION.md)
-- [详细介绍：能力、边界与 Token 成本](docs/INTRODUCTION.zh-CN.md)
-- [Architecture Decision Record / 架构决策记录](docs/ADR-0001-reliability-guard.md)
-- [v1.1.5 Validation Report / v1.1.5 验证报告](docs/VALIDATION-1.1.5.md)
+- [Detailed overview: capabilities, boundaries, and token cost](https://github.com/StrIngeKing/dsh-reliability-guard/blob/main/docs/INTRODUCTION.md)
+- [详细介绍：能力、边界与 Token 成本](https://github.com/StrIngeKing/dsh-reliability-guard/blob/main/docs/INTRODUCTION.zh-CN.md)
+- [Architecture Decision Record / 架构决策记录](https://github.com/StrIngeKing/dsh-reliability-guard/blob/main/docs/ADR-0001-reliability-guard.md)
+- [v1.1.8 Validation Report / v1.1.8 验证报告](https://github.com/StrIngeKing/dsh-reliability-guard/blob/main/docs/VALIDATION-1.1.8.md)
+- [v1.1.5 Historical Validation / v1.1.5 历史验证](https://github.com/StrIngeKing/dsh-reliability-guard/blob/main/docs/VALIDATION-1.1.5.md)
 - [Changelog / 更新日志](CHANGELOG.md)
-
 
 ## License
 

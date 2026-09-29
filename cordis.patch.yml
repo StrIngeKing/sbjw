@@ -15,14 +15,21 @@
       name: dsh-reliability-guard
       config:
         mode: balanced
+        prompt:
+          enabled: true
+          verbosity: minimal
         review:
           enabled: true
           highRiskOnly: true
-          maxRounds: 2
+          maxRounds: 1
         completionGate:
           enabled: true
+          maxInjectionsPerTurn: 1
         freshnessGate:
           enabled: true
+        evidence:
+          injectDigest: false
         diagnostics:
           enabled: true
           includeSensitiveContent: false
+          runtimeShellTrace: false

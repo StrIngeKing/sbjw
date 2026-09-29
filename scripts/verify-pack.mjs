@@ -93,6 +93,11 @@ for (const [name, range] of Object.entries(manifest.peerDependencies ?? {})) {
   check(!/[\^*]/.test(range) || /^\d+\.\d+\.\d+$/.test(range) || /^~/.test(range), `peer dependency ${name} range "${range}" is too loose`)
 }
 
+check(
+  !Object.keys(manifest.peerDependencies ?? {}).some(name => name === '@deepseek-ai/dsh' || name.startsWith('@deepseek-ai/dsh-')),
+  '1.1.7+ must not declare DSH host-version peers; missing host peers are the intentional compatibility policy',
+)
+
 if (failures.length > 0) {
   console.error('verify-pack failed:')
   for (const failure of failures) console.error(`  - ${failure}`)

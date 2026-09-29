@@ -3,6 +3,52 @@
 All notable changes to `dsh-reliability-guard` are documented here. This
 project follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.8] — 2026-09-29
+
+### Declaration and reconciliation hardening / 声明与修复通道加固
+
+- uncertainty 声明解析现在容忍常见 Markdown 列表/加粗形式，例如 `**未验证：X**`、`- **未确认: X**`；避免模型自然排版导致 unknown 安全记账静默失效。
+- `reliability_guard_reconcile` 的 `resolve_unknown` 工具说明明确顺序：**声明 → 新的成功核查 → resolve**，`evidence_seq` 必须晚于该声明。
+- README 明确：读取类报错记为失败 verification/check，不进入 `unexplained failures`；`resolve_failure` 用于非读取类任务失败。
+- completion gate 的评审提示不再写“has not run”，而改为“尚无 PASS/FAIL verdict；本回合已发起的评审可能在回合末落账”，避免同回合 reviewer 已返回但状态尚未 capture 时产生误导。
+- 文档补充覆盖性核查的时间顺序：mutation 与 verification 必须是独立、后续调用；与变更同一并行批次启动的读取不能覆盖该变更。
+- 不改变 1.1.7 已验收通过的 deletion receipts、review 判定、低开销默认值、DSH host peer 无版本约束策略。
+
+## [1.1.7] — 2026-09-29
+
+### Host compatibility policy / 宿主兼容策略
+
+- 移除 `peerDependencies` 中全部 `@deepseek-ai/dsh` / `@deepseek-ai/dsh-*` host-version 声明。根据 DSH Loader 的兼容规则，未声明 DSH host peer 即“不施加版本约束”，因此 `0.2.0-rc.2` 及后续 RC/小版本不会再仅因为旧 peer range 被启动兼容门拒绝。
+- 不使用 `*` / `>=` 伪装成“无限兼容”；对 prerelease 来说宽泛 semver 容易产生意外匹配语义。这里直接省略 DSH host peers，让 Loader 明确按“无版本约束”处理。
+- `@deepseek-ai/cordis` 与 `@deepseek-ai/schemastery` 仍保留精确 peer；源码开发依赖仍可固定在已验证 DSH train，它们不参与 Loader 的 DSH host-version admission。
+- 风险取舍：此变更只移除**版本号门禁**，不保证未来 DSH API 永不破坏。真正的 API/服务变更仍可能导致插件加载失败，需要按实际故障适配。
+- 运行时代码、1.1.6 的低开销默认值、shell receipt / mutation ledger / review / completion gate 逻辑均不修改。
+
+## [1.1.6] — 2026-09-29
+
+### Low-overhead defaults / 低开销默认值
+
+- 新增 `prompt.verbosity=minimal` 并设为默认：常驻 policy 从 1.1.5 `compact` 的
+  2769 字符 / 443 words 降到 804 字符 / 104 words；`compact` 与 `full` 仍可选。
+  文本仍保持 prefix-stable，同一配置每次渲染完全相同，便于宿主前缀缓存。
+- 默认 `completionGate.maxInjectionsPerTurn=1`、`evidence.injectDigest=false`、
+  `evidence.maxDigestChars=1600`，避免同一缺口重复注入整份证据摘要；门禁仍逐目标要求
+  mutation verification。
+- 默认 `review.maxRounds=1`：HIGH/CRITICAL 仍必须独立评审，但一次 FAIL 后不自动再花
+  一轮 reviewer 上下文；需要自动纠错复审的部署可显式改回 `2`。
+- 1.1.3 临时 shell-query runtime trace 改为 `diagnostics.runtimeShellTrace=false` 默认关闭；
+  需要排障时可临时打开，不影响正常 verification。
+
+### Context compaction / 上下文压缩
+
+- 压缩 `reliability_guard` / `reliability_guard_reconcile` 的常驻 tool schema 描述。
+- completion-gate 只注入当前缺口的短指令；默认不再附整份 evidence digest。
+- reviewer prompt 保留 requirement / state / change / checks 四块独立证据，但压缩固定说明，
+  并对每块做有界截断；mutation / verification 列表也做有界摘要，防止多文件任务把 reviewer
+  prompt 无界放大。
+- 这些更改只减少上下文，不改变 1.1.5 的 risk、ledger、shell receipt、mutation coverage、
+  review PASS/FAIL 或 fail-closed 语义。
+
 ## [1.1.5] — 2026-09-29
 
 ### Compatibility / 兼容性
