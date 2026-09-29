@@ -7,6 +7,8 @@ A reliability guard for **DeepSeek Harness**. Starting with 1.1.7, the package d
 Every gate is computed from program state and tool results. Nothing here asks a
 model to self-assess, and nothing here replaces an official DSH capability.
 
+- **npm:** `dsh-reliability-guard`
+
 - **Version / 版本：** 1.1.8
 - **Runtime:** DSH host-version admission is unpinned; Node ≥ 20
 - **Dependencies:** `@deepseek-ai/cordis` 4.0.4 and `@deepseek-ai/schemastery` 3.18.4 remain explicit peers; DSH host modules are supplied by the Harness runtime resolver
@@ -295,47 +297,98 @@ Shell 识别器不是完整解释器；支持的字面量删除、写入和重�
 
 ### Install
 
+DSH Reliability Guard is available on **npm** and as a prebuilt `.tgz` package
+from [GitHub Releases](https://github.com/StrIngeKing/dsh-reliability-guard/releases).
+
+The npm package name is:
+
+```text
+dsh-reliability-guard
+```
+
+#### Install from npm
+
+For a DSH profile managed through the CLI:
+
+```sh
+dsh plugin --profile <name> add dsh-reliability-guard
+```
+
+This installs the published npm package and adds the bundle to the selected
+DeepSeek Harness profile.
+
+You may also install the package directly with npm when working with the package
+outside DSH:
+
+```sh
+npm install dsh-reliability-guard
+```
+
+> For normal DeepSeek Harness use, prefer `dsh plugin ... add` rather than
+> installing the package directly with npm.
+
+#### Install from GitHub Release
+
+Download the prebuilt package from the corresponding GitHub Release:
+
+```text
+dsh-reliability-guard-1.1.8.tgz
+```
+
+Then install it into a CLI-managed profile:
+
+```sh
+dsh plugin --profile <name> add /abs/path/dsh-reliability-guard-1.1.8.tgz
+```
+
+#### Install from a local checkout
+
+For development or local testing:
+
+```sh
+dsh plugin --profile <name> add /abs/path/dsh-reliability-guard
+```
+
+#### Package structure
+
 The package is a DSH **bundle**: its `package.json` declares
 `dsh.bundle.patch`, and that patch inserts one entry (`id: reliability-guard`)
 into the composed profile tree.
 
-Its official packages are declared as **peer dependencies** rather than
-dependencies, so the plugin always binds to the single copy the host loaded and
-never to a second instance of the tool registry or prompt service. The installed
-application provides them; nothing extra has to be installed alongside the
-plugin.
+The plugin relies on the runtime services provided by DeepSeek Harness rather
+than bundling a second copy of the host runtime. Its declared peer dependencies
+are resolved from the host environment, avoiding duplicate service registries
+or prompt infrastructure.
 
-### CLI (any profile that is not `desktop`)
+#### Desktop
 
-```sh
-# from a packed tarball
-dsh plugin --profile <name> add /abs/path/dsh-reliability-guard-1.1.8.tgz
+The Electron application manages the `desktop` profile itself. Install the
+plugin through the Desktop plugin interface rather than the CLI:
 
-# from a local checkout
-dsh plugin --profile <name> add /abs/path/dsh-reliability-guard
+1. Open **Plugins** in the sidebar.
+2. Choose **Install**.
+3. Enter the npm package name:
 
-# from npm, once published
-dsh plugin --profile <name> add dsh-reliability-guard
+   ```text
+   dsh-reliability-guard
+   ```
+
+   or select the downloaded `.tgz` file.
+
+4. Confirm that **可靠性守卫 / Reliability Guard** appears in the plugin list.
+5. Enable it if necessary.
+
+After installation, open a session and call:
+
+```text
+reliability_guard
 ```
 
-Installing appends the bundle to `dsh.profile.bundles` in the profile's
-`package.json`, enabled, at the end of the layer order. Verify with:
+A successful load should report the plugin version and:
 
-```sh
-dsh --profile <name> --dump-config | grep -A 12 reliability-guard
+```text
+toolsRegistered: true
 ```
-
-### Desktop
-
-The Electron application owns the `desktop` profile; the CLI refuses to manage
-it. Use the in-app Web UI at `http://127.0.0.1:19387`:
-
-1. Sidebar → **Plugins**.
-2. **Install** → paste the tarball path or the package specifier.
-3. The row **可靠性守卫 / Reliability Guard** appears in the list; toggle it there.
-
-Then confirm the entry is live under **Settings → Plugins**. Changes apply to
-every session on the profile.
 
 ### Web
 
