@@ -552,6 +552,16 @@ See [`docs/ADR-0001-reliability-guard.md`](docs/ADR-0001-reliability-guard.md)
 for the architecture decisions and the seam inventory this plugin is built on,
 and [`CHANGELOG.md`](CHANGELOG.md) for release history.
 
+
+## Further reading / 进一步阅读
+
+- [Detailed overview: capabilities, boundaries, and token cost](docs/INTRODUCTION.md)
+- [详细介绍：能力、边界与 Token 成本](docs/INTRODUCTION.zh-CN.md)
+- [Architecture Decision Record / 架构决策记录](docs/ADR-0001-reliability-guard.md)
+- [v1.1.5 Validation Report / v1.1.5 验证报告](docs/VALIDATION-1.1.5.md)
+- [Changelog / 更新日志](CHANGELOG.md)
+
+
 ## License
 
 MIT
