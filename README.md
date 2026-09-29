@@ -8,7 +8,7 @@
 
 The rule is simple: **the AI does not get to say “done” just because it says so.**
 
-- npm package: `sbjw`
+- npm package: `sbjw`(暂时没申请下来，有点冲突，之前是dsh-reliability-guard)
 - version: `1.2.0`
 - Node.js: `>= 20`
 - DSH host version: intentionally unpinned
