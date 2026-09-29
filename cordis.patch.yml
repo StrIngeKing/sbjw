@@ -1,0 +1,28 @@
+# dsh-reliability-guard bundle patch.
+#
+# A bundle patch is applied as one insert over the previous layer, so the entry
+# id below is what a user addresses from their own profile patch or the home
+# patch. Disable it there, or remove the bundle from `dsh.profile.bundles`,
+# rather than editing this file.
+#
+# The guard has no required ordering beyond the rows it depends on
+# (`dsh-tools` for the pipeline, `dsh-system-prompt` for the policy section,
+# `dsh-agent-loop` for the turn it corrects). It declares those through
+# `inject`, which keeps activation service-availability driven: a profile
+# without one of them simply never activates the guard.
+- insert:
+    - id: reliability-guard
+      name: dsh-reliability-guard
+      config:
+        mode: balanced
+        review:
+          enabled: true
+          highRiskOnly: true
+          maxRounds: 2
+        completionGate:
+          enabled: true
+        freshnessGate:
+          enabled: true
+        diagnostics:
+          enabled: true
+          includeSensitiveContent: false

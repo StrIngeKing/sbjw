@@ -1,0 +1,14 @@
+# The published tarball is produced by `pnpm pack`; nothing here is installed by
+# the consumer, and the plugin itself has no build step.
+node_modules/
+dist/
+
+# Local probes and one-shot helpers used while developing this package. The
+# release tarball is defined by package.json `files`, so these never ship; they
+# are ignored rather than deleted so a reviewer can re-run them.
+scratch/
+
+# Editor and OS noise.
+.DS_Store
+Thumbs.db
+*.log
