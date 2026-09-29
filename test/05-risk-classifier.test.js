@@ -166,7 +166,7 @@ test('a CRITICAL call with no stated plan is denied because no approval channel 
   const denied = await callTool(probe.ctx, 'pwsh', { command: 'DROP TABLE t' }, { agent })
   assert.equal(denied.isError, true)
   const reason = denied.error.message
-  assert.match(reason, /Reliability Guard: CRITICAL risk \(destructive SQL/)
+  assert.match(reason, /Cyber Internal Affairs: CRITICAL risk \(destructive SQL/)
   assert.match(reason, /missing: rollback \+ verification/)
   assert.match(reason, /Approve only if you accept this change without a stated rollback or verification plan/)
   assert.equal(denied.error.info, undefined, 'the deny comes from the registry degrade, not from a guard rule')
@@ -174,7 +174,7 @@ test('a CRITICAL call with no stated plan is denied because no approval channel 
   const state = bucket(agent)
   assert.equal(state.counters.asked, 1, 'the call must have been routed to approval')
   assert.equal(state.counters.deniedHighRisk, 0)
-  assert.match(resultText(denied), /^Error: Reliability Guard: CRITICAL risk/)
+  assert.match(resultText(denied), /^Error: Cyber Internal Affairs: CRITICAL risk/)
 })
 
 test('the same CRITICAL call is allowed when it states a rollback and a verification plan', async (t) => {
@@ -207,9 +207,9 @@ test('a HIGH-risk call without a plan is refused with the guard\'s own machine c
 
   const denied = await callTool(probe.ctx, 'pwsh', { command: 'rm -rf ./build' }, { agent })
   assert.equal(denied.isError, true)
-  assert.equal(denied.error.info.code, 'RELIABILITY_GUARD_RISK')
+  assert.equal(denied.error.info.code, 'SBJW_RISK')
   const reason = denied.error.message
-  assert.match(reason, /Reliability Guard refused this HIGH-risk call/)
+  assert.match(reason, /Cyber Internal Affairs refused this HIGH-risk call/)
   assert.match(reason, /recursively deletes a directory tree/)
   assert.match(reason, /Missing before this can run: rollback and verification/)
   assert.match(reason, /Scope: path \(workspace root: /)
@@ -217,7 +217,7 @@ test('a HIGH-risk call without a plan is refused with the guard\'s own machine c
 
   const state = bucket(agent)
   assert.equal(state.counters.deniedHighRisk, 1)
-  assert.match(probe.logger.at('warn').join('\n'), /reliability-guard: denied: HIGH risk/)
+  assert.match(probe.logger.at('warn').join('\n'), /sbjw: denied: HIGH risk/)
 })
 
 test('the shipped approval service denies when no answerer is attached', async (t) => {

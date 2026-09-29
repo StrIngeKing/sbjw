@@ -189,9 +189,9 @@ test('a corrective message is returned for driver-owned delivery without pre-enq
     before,
     'the registry must not pre-enqueue contexts that the driver will deliver',
   )
-  const staged = result.additionalContexts.find(message => message.source?.kind === 'reliability-guard')
-  assert.equal(staged.source.kind, 'reliability-guard')
-  assert.match(messageText(staged), /Reliability Guard/)
+  const staged = result.additionalContexts.find(message => message.source?.kind === 'sbjw')
+  assert.equal(staged.source.kind, 'sbjw')
+  assert.match(messageText(staged), /Cyber Internal Affairs/)
 
   // Complete delivery and model continuation are exercised by the real-loop
   // regressions in 19-context-delivery.test.js.

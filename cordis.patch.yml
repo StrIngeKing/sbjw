@@ -1,8 +1,7 @@
-# dsh-reliability-guard bundle patch.
+# sbjw (Cyber Internal Affairs / 赛博纪委) bundle patch.
 #
-# A bundle patch is applied as one insert over the previous layer, so the entry
-# id below is what a user addresses from their own profile patch or the home
-# patch. Disable it there, or remove the bundle from `dsh.profile.bundles`,
+# A bundle patch is applied as one insert over the previous layer. The public
+# component id is `sbjw`, matching the npm package name and DSH plugin page. Disable it there, or remove the bundle from `dsh.profile.bundles`,
 # rather than editing this file.
 #
 # The guard has no required ordering beyond the rows it depends on
@@ -11,8 +10,8 @@
 # `inject`, which keeps activation service-availability driven: a profile
 # without one of them simply never activates the guard.
 - insert:
-    - id: reliability-guard
-      name: dsh-reliability-guard
+    - id: sbjw
+      name: sbjw
       config:
         mode: balanced
         prompt:

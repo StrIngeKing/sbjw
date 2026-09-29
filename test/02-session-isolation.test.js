@@ -37,7 +37,7 @@ test('the guard tracks one state bucket per session and never mixes them', async
   assert.equal(bucketB.evidence.has('/tmp/a.txt'), false)
 
   // The per-session diagnostics report only its own session.
-  const reportA = resultText(await callTool(probe.ctx, 'reliability_guard', { detail: true }, { agent: agentA }))
+  const reportA = resultText(await callTool(probe.ctx, 'sbjw', { detail: true }, { agent: agentA }))
   assert.match(reportA, /session-a/)
   assert.doesNotMatch(reportA, /session-b/)
 })

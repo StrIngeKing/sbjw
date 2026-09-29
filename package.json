@@ -1,7 +1,7 @@
 {
-  "name": "dsh-reliability-guard",
-  "version": "1.1.8",
-  "description": "可靠性守卫 / Reliability Guard for DeepSeek Harness: 为 DeepSeek Harness 提供确定性的证据、循环、风险、验证与完成门禁。 / Deterministic evidence, loop, risk, verification, and completion gates.",
+  "name": "sbjw",
+  "version": "1.2.0",
+  "description": "赛博纪委 (Cyber Internal Affairs) for DeepSeek Harness — evidence-gated mutation verification, risk review, loop protection, and completion checks.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -17,6 +17,7 @@
     "locale/*.json",
     "cordis.patch.yml",
     "README.md",
+    "README.zh-CN.md",
     "CHANGELOG.md",
     "LICENSE"
   ],
@@ -29,18 +30,22 @@
     "dsh",
     "deepseek-harness",
     "plugin",
-    "reliability",
-    "guard"
+    "evidence",
+    "verification",
+    "audit",
+    "agent-safety",
+    "cyber-internal-affairs",
+    "sbjw"
   ],
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/StrIngeKing/dsh-reliability-guard.git"
+    "url": "git+https://github.com/StrIngeKing/sbjw.git"
   },
   "bugs": {
-    "url": "https://github.com/StrIngeKing/dsh-reliability-guard/issues"
+    "url": "https://github.com/StrIngeKing/sbjw/issues"
   },
-  "homepage": "https://github.com/StrIngeKing/dsh-reliability-guard#readme",
+  "homepage": "https://github.com/StrIngeKing/sbjw#readme",
   "engines": {
     "node": ">=20"
   },

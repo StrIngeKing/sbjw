@@ -19,10 +19,10 @@ test('unloading the plugin removes the prompt section and the diagnostics tool',
 
   // Both contributions exist while the plugin is mounted...
   const before = await ctx.systemPrompt.assemble({})
-  assert.ok(before.sections.some((section) => section.name === 'reliability-guard:policy'))
-  assert.ok(ctx.tools.get('reliability_guard', undefined) !== undefined)
+  assert.ok(before.sections.some((section) => section.name === 'sbjw:policy'))
+  assert.ok(ctx.tools.get('sbjw', undefined) !== undefined)
   const sessionsBefore = ctx.tools.schemas(undefined).length
-  const diagnosticsSchema = ctx.tools.schemas(undefined).find((schema) => schema.name === 'reliability_guard')
+  const diagnosticsSchema = ctx.tools.schemas(undefined).find((schema) => schema.name === 'sbjw')
   assert.deepEqual(
     diagnosticsSchema?.parameters,
     {
@@ -42,12 +42,12 @@ test('unloading the plugin removes the prompt section and the diagnostics tool',
   await fiber.dispose()
   const after = await ctx.systemPrompt.assemble({})
   assert.equal(
-    after.sections.some((section) => section.name === 'reliability-guard:policy'),
+    after.sections.some((section) => section.name === 'sbjw:policy'),
     false,
     'the policy section must be disposed with the plugin',
   )
-  assert.equal(ctx.tools.get('reliability_guard', undefined), undefined, 'the diagnostics tool must be disposed with the plugin')
-  assert.equal(ctx.tools.get('reliability_guard_reconcile', undefined), undefined, 'the reconciliation tool must be disposed too')
+  assert.equal(ctx.tools.get('sbjw', undefined), undefined, 'the diagnostics tool must be disposed with the plugin')
+  assert.equal(ctx.tools.get('sbjw_reconcile', undefined), undefined, 'the reconciliation tool must be disposed too')
   assert.equal(ctx.tools.schemas(undefined).length, sessionsBefore - 2, 'both plugin tools must disappear')
 })
 
@@ -85,7 +85,7 @@ test('a reload starts from a clean slate with no inherited state', async (t) => 
   const agent = await harness.create(SessionId('reload'), {}, { cwd: process.cwd() })
   const firstRegistry = states()
   await ctx.tools.execute({
-    name: 'reliability_guard',
+    name: 'sbjw',
     callId: 'call-1',
     arguments: {},
     signal: new AbortController().signal,
@@ -104,7 +104,7 @@ test('a reload starts from a clean slate with no inherited state', async (t) => 
 
   const assembly = await ctx.systemPrompt.assemble({})
   assert.equal(
-    assembly.sections.filter((section) => section.name === 'reliability-guard:policy').length,
+    assembly.sections.filter((section) => section.name === 'sbjw:policy').length,
     1,
     'a reload must not duplicate the prompt section',
   )
@@ -122,10 +122,10 @@ test('two guard instances compose without duplicating the prompt section or the 
   const assembly = await ctx.systemPrompt.assemble({})
   // The system-prompt registry shadows same-named sections, so the second
   // instance replaces the first rather than appending a duplicate.
-  assert.equal(assembly.sections.filter((section) => section.name === 'reliability-guard:policy').length, 1)
+  assert.equal(assembly.sections.filter((section) => section.name === 'sbjw:policy').length, 1)
   // Two registrations of one tool name are tolerated by the registry; what
   // matters is that a call still resolves to exactly one implementation.
-  const tool = ctx.tools.get('reliability_guard', undefined)
+  const tool = ctx.tools.get('sbjw', undefined)
   assert.ok(tool !== undefined)
 })
 

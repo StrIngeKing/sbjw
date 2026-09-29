@@ -8,7 +8,7 @@
  * only what a consumer needs; it deliberately does not run the test suite,
  * because packing must stay fast and offline.
  *
- * @module dsh-reliability-guard/scripts/verify-pack
+ * @module sbjw/scripts/verify-pack
  */
 
 import { readFileSync, existsSync } from 'node:fs'
@@ -28,6 +28,7 @@ check(existsSync(manifestPath), 'package.json is missing')
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
 
 check(typeof manifest.name === 'string' && manifest.name.length > 0, 'package.json declares no name')
+check(manifest.name === 'sbjw', `package.json name must be sbjw, got ${JSON.stringify(manifest.name)}`)
 check(/^\d+\.\d+\.\d+/.test(manifest.version ?? ''), `package.json version "${manifest.version}" is not a release version`)
 check(manifest.type === 'module', 'package.json must declare type: module')
 check(manifest.main === 'lib/index.js', 'package.json main must be lib/index.js')
@@ -50,7 +51,7 @@ check(existsSync(patchPath), 'cordis.patch.yml is missing')
 if (existsSync(patchPath)) {
   const patch = readFileSync(patchPath, 'utf8')
   check(/^\s*-\s*insert:/m.test(patch), 'cordis.patch.yml has no "- insert:" row')
-  check(/id:\s*reliability-guard/.test(patch), 'cordis.patch.yml does not name the reliability-guard entry')
+  check(/id:\s*sbjw/.test(patch), 'cordis.patch.yml does not name the sbjw entry')
 }
 
 const entryPath = join(root, 'lib', 'index.js')
@@ -67,7 +68,7 @@ if (existsSync(entryPath)) {
   )
 }
 
-for (const file of ['README.md', 'CHANGELOG.md', 'LICENSE']) {
+for (const file of ['README.md', 'README.zh-CN.md', 'CHANGELOG.md', 'LICENSE']) {
   check((manifest.files ?? []).includes(file), `package.json files[] does not ship ${file}`)
   check(existsSync(join(root, file)), `${file} is listed in files[] but does not exist`)
 }
@@ -79,8 +80,8 @@ for (const language of ['en', 'zh']) {
   const locale = JSON.parse(readFileSync(localePath, 'utf8'))
   check(typeof locale.meta?.title === 'string' && locale.meta.title.trim().length > 0, `${language} locale has no meta.title`)
   check(
-    locale.meta?.title === (language === 'en' ? 'Reliability Guard / 可靠性守卫' : '可靠性守卫 / Reliability Guard'),
-    `${language} locale title must be the bilingual display name "可靠性守卫 / Reliability Guard"`,
+    locale.meta?.title === (language === 'en' ? 'Cyber Internal Affairs' : '赛博纪委'),
+    `${language} locale title must match the localized Cyber Internal Affairs / 赛博纪委 display name`,
   )
   check(typeof locale.meta?.description === 'string' && locale.meta.description.trim().length > 0, `${language} locale has no meta.description`)
 }

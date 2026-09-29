@@ -60,11 +60,11 @@ export async function mountGuardHarness({ config = {}, tools = true, plugin = Gu
   })
   ctx.on('tools/post-execute', async (exec, result, next) => {
     events.push(`post:${exec.name}`)
-    if (process.env.RELIABILITY_GUARD_TRACE_HARNESS === '1') {
+    if (process.env.SBJW_TRACE_HARNESS === '1') {
       process.stderr.write(`[harness-post] enter name=${exec.name} resultKeys=${JSON.stringify(Object.keys(result ?? {}))}\n`)
     }
     const downstream = await next()
-    if (process.env.RELIABILITY_GUARD_TRACE_HARNESS === '1') {
+    if (process.env.SBJW_TRACE_HARNESS === '1') {
       process.stderr.write(`[harness-post] downstream keys=${JSON.stringify(Object.keys(downstream ?? {}))}\n`)
     }
     return downstream
@@ -225,7 +225,7 @@ export function contextKinds(result) {
 /** Read the guard's injected notices from a result. */
 export function guardNotices(result) {
   return (result.additionalContexts ?? [])
-    .filter((message) => message.source?.kind === 'reliability-guard')
+    .filter((message) => message.source?.kind === 'sbjw')
     .map((message) => ({
       tag: message.source?.tag,
       text: (message.content ?? []).map((part) => part.text).join('\n'),

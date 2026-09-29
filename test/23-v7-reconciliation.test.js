@@ -51,7 +51,7 @@ for (const check of ['Test-Path -LiteralPath gone.txt', 'Get-ChildItem -LiteralP
     assert.match(risk.command, /Join-Path/)
     assert.equal(s.unresolvedMutationCount, 1)
     assert.equal([...s.mutations.values()][0].expected, 'present', 'old write has not silently become a deletion')
-    const declared = await callTool(p.ctx, 'reliability_guard_reconcile', { action: 'declare_targets', call_seq: risk.at, targets: [{ path: 'gone.txt', expected: 'absent' }], reason: 'The preceding command joined cwd with the literal gone.txt; the whole affected scope is this file.' }, { agent: a })
+    const declared = await callTool(p.ctx, 'sbjw_reconcile', { action: 'declare_targets', call_seq: risk.at, targets: [{ path: 'gone.txt', expected: 'absent' }], reason: 'The preceding command joined cwd with the literal gone.txt; the whole affected scope is this file.' }, { agent: a })
     assert.equal(declared.isError, false, resultText(declared))
     assert.equal(s.unresolvedMutationCount, 1, 'declaration alone is not proof')
     assert.equal(ledger.pendingMutations().length, 1)
@@ -62,7 +62,7 @@ for (const check of ['Test-Path -LiteralPath gone.txt', 'Get-ChildItem -LiteralP
     assert.equal(s.unresolvedMutationCount, 0)
     assert.equal(ledger.pendingMutations().length, 0)
     assert.equal(gate(s).passed, true)
-    const diag = resultText(await callTool(p.ctx, 'reliability_guard', { detail: true }, { agent: a }))
+    const diag = resultText(await callTool(p.ctx, 'sbjw', { detail: true }, { agent: a }))
     assert.match(diag, /superseded by #/)
   })
 }
@@ -72,10 +72,10 @@ test('declaration cannot omit known targets, use a future call, or certify a sti
   await callTool(p.ctx, 'write', { file_path: 'kept', content: 'fixture' }, { agent: a })
   const s = bucket(p, a), seq = s.seq
   for (const args of [{ call_seq: seq, targets: [] }, { call_seq: 9999, targets: [{ path: 'kept', expected: 'absent' }] }, { call_seq: seq, targets: [{ path: 'other', expected: 'absent' }] }]) {
-    const r = await callTool(p.ctx, 'reliability_guard_reconcile', { action: 'declare_targets', reason: 'test validation', ...args }, { agent: a })
+    const r = await callTool(p.ctx, 'sbjw_reconcile', { action: 'declare_targets', reason: 'test validation', ...args }, { agent: a })
     assert.equal(r.isError, true)
   }
-  const r = await callTool(p.ctx, 'reliability_guard_reconcile', { action: 'declare_targets', call_seq: seq, targets: [{ path: 'kept', expected: 'absent' }], reason: 'Caller claims deletion; actual file remains.' }, { agent: a })
+  const r = await callTool(p.ctx, 'sbjw_reconcile', { action: 'declare_targets', call_seq: seq, targets: [{ path: 'kept', expected: 'absent' }], reason: 'Caller claims deletion; actual file remains.' }, { agent: a })
   assert.equal(r.isError, false)
   await callTool(p.ctx, 'read', { file_path: 'kept' }, { agent: a })
   assert.equal(s.unresolvedMutationCount, 1)
@@ -89,7 +89,7 @@ test('zero-path mutation can be attached to scope without leaving an unscoped pe
   await callTool(p.ctx, 'read', { file_path: 'x' }, { agent: a })
   const s = bucket(p, a), ledger = new EvidenceLedger(s), seq = s.seq
   ledger.noteMutation(undefined, 'CRITICAL')
-  const r = await callTool(p.ctx, 'reliability_guard_reconcile', { action: 'declare_targets', call_seq: seq, targets: [{ path: 'x', expected: 'present' }], reason: 'Identify the full scope of the unscoped fixture change.' }, { agent: a })
+  const r = await callTool(p.ctx, 'sbjw_reconcile', { action: 'declare_targets', call_seq: seq, targets: [{ path: 'x', expected: 'present' }], reason: 'Identify the full scope of the unscoped fixture change.' }, { agent: a })
   assert.equal(r.isError, false, resultText(r))
   assert.equal(s.unresolvedMutationCount, 1)
   await callTool(p.ctx, 'read', { file_path: 'x' }, { agent: a })
@@ -110,7 +110,7 @@ test('nested sessions defer review to their parent and depth-limit errors are no
   assert.equal(s.counters.reviewsRequested, 0)
   assert.equal(s.reviewDeferredToParent, true)
   assert.ok(!guardNotices(r).some(n => n.tag === 'review'))
-  assert.match(resultText(await callTool(p.ctx, 'reliability_guard', { detail: true }, { agent: a })), /DEFERRED TO PARENT \(not PASS\)/)
+  assert.match(resultText(await callTool(p.ctx, 'sbjw', { detail: true }, { agent: a })), /DEFERRED TO PARENT \(not PASS\)/)
 })
 
 for (const name of ['subagent_fork', 'workflow']) {
@@ -152,7 +152,7 @@ test('machine success cannot settle declared unknown scope without targeted obse
   const p = await realFiles(t, { review: { enabled: false } }), a = await make(p, 'not-proof')
   await callTool(p.ctx, 'write', { file_path: 'x', content: 'fixture' }, { agent: a })
   const s = bucket(p, a), seq = s.seq
-  await callTool(p.ctx, 'reliability_guard_reconcile', { action: 'declare_targets', call_seq: seq, targets: [{ path: 'x', expected: 'present' }], reason: 'Declared scope' }, { agent: a })
+  await callTool(p.ctx, 'sbjw_reconcile', { action: 'declare_targets', call_seq: seq, targets: [{ path: 'x', expected: 'present' }], reason: 'Declared scope' }, { agent: a })
   fixtureTool(p.ctx, 'probe_test', () => '5 passed, 0 failed')
   await callTool(p.ctx, 'probe_test', {}, { agent: a })
   assert.equal(s.unresolvedMutationCount, 1)
@@ -172,10 +172,10 @@ test('focused original commands are redacted and new tools keep object-root sche
   await callTool(p.ctx, 'read', { file_path: 'missing' }, { agent: a })
   const s = bucket(p, a), ledger = new EvidenceLedger(s)
   ledger.noteUnresolvedMutation('pwsh', 'unresolved fixture', s.seq, "Remove-Item $f # password=secret123")
-  const result = await callTool(p.ctx, 'reliability_guard', { call_seq: s.seq }, { agent: a })
+  const result = await callTool(p.ctx, 'sbjw', { call_seq: s.seq }, { agent: a })
   assert.doesNotMatch(resultText(result), /secret123/)
   assert.match(resultText(result), /Remove-Item/)
-  for (const name of ['reliability_guard', 'reliability_guard_reconcile']) assert.equal(p.ctx.tools.schemas(undefined).find(s => s.name === name).parameters.type, 'object')
+  for (const name of ['sbjw', 'sbjw_reconcile']) assert.equal(p.ctx.tools.schemas(undefined).find(s => s.name === name).parameters.type, 'object')
 })
 
 test('quoted in-place editor words do not classify a script or temp directory creation as bulk rewrite', () => {
@@ -191,10 +191,10 @@ test('unknown resolution requires a real newer verification and does not clear m
   const s = bucket(p, a), ledger = new EvidenceLedger(s)
   ledger.noteUnknown('Whether x is readable', 'test')
   const id = s.unknowns[0].id
-  const bad = await callTool(p.ctx, 'reliability_guard_reconcile', { action: 'resolve_unknown', unknown_id: id, evidence_seq: 9999, reason: 'No evidence' }, { agent: a })
+  const bad = await callTool(p.ctx, 'sbjw_reconcile', { action: 'resolve_unknown', unknown_id: id, evidence_seq: 9999, reason: 'No evidence' }, { agent: a })
   assert.equal(bad.isError, true)
   await callTool(p.ctx, 'read', { file_path: 'x' }, { agent: a })
-  const resolved = await callTool(p.ctx, 'reliability_guard_reconcile', { action: 'resolve_unknown', unknown_id: id, evidence_seq: s.verifications.at(-1).at, reason: 'The read returned its contents.' }, { agent: a })
+  const resolved = await callTool(p.ctx, 'sbjw_reconcile', { action: 'resolve_unknown', unknown_id: id, evidence_seq: s.verifications.at(-1).at, reason: 'The read returned its contents.' }, { agent: a })
   assert.equal(resolved.isError, false, resultText(resolved))
   assert.equal(s.unknowns.length, 0)
   assert.equal(s.resolvedUnknowns.length, 1)

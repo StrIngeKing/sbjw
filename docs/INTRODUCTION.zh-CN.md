@@ -1,4 +1,4 @@
-# DSH Reliability Guard：能力、边界与 Token 成本说明（1.1.8 版）
+# 赛博纪委（Cyber Internal Affairs）：能力、边界与 Token 成本说明（1.1.9 版）
 
 > 本文面向 **1.1.8**，结论来自真实 DSH Desktop 会话的**账本原文**与**宿主逐请求用量计量**（token / 缓存命中率 / 结算花费）。涉及版本行为处均标注版本与证据来源。
 
@@ -42,12 +42,12 @@
 | **④ 覆盖判定（Coverage）** | 只有"**目标匹配 + 类型够强 + 晚于变更**"的核查才算数。写入/读取要求 `read-back`（原生 `read` 即带目标）；**删除必须是 `absence`**（`Test-Path → False`、`Get-Item` 缺失，或父目录重列 + 精确 stat）。实测：`check #22: absence PASS; strong=true; targets=[{…, "expected":"absent", "source":"shell-false"}]`，对应 mutation `covering verification: 22`。**注意**：核查必须是**独立且晚于变更的调用**；与变更同批次并行启动的读取不算。 |
 | **⑤ 完成门禁（Completion Gate）** | 回合结束前若仍存在"无覆盖的变更 / 未解释的失败 / 未决未知项 / 未评审的高风险变更"，就会**向对话注入一条指令**（默认每回合最多 1 条、不附带整份证据摘要），明确列出缺口与补救办法。1.1.8 起文案不再写 "has not run"，而是"尚无 PASS/FAIL verdict；本回合已发起的评审可能在回合末落账"。 |
 | **⑥ 强制独立评审** | 高风险变更（尤其删除）要求拉起 fresh-context 评审员，必须给出 `VERDICT: PASS\|FAIL`；FAIL 作为"**未解决的反对意见**"写进结论；默认 `maxRounds=1`。本会话累计 **7 次 PASS**（另有早期多轮 FAIL），其中一次评审员**独立纠正了作者的字节数误记**，另一次自行解压会话记录、重建被删内容并给出 SHA256。 |
-| **⑦ 审计读取工具** | `reliability_guard(detail:true)` 查看：`pending mutation verification`、逐条 mutation/check（含 `targets` 与 `source`）、`stale observations`、`unexplained failures`、`unknowns`、`counters`、跨重启 `history`；支持 `call_seq` 回看历史调用，**含脱敏后的原命令**。1.1.3 曾有临时 shell 查询运行时追踪，现已默认关闭（`diagnostics.runtimeShellTrace=false`）。 |
-| **⑧ 记账修复通道** | `reliability_guard_reconcile`：`declare_targets`（补录范围，且明确"**声明不是证据**"，之后必须独立回查）、`resolve_unknown`（顺序必须是"**声明 → 更新的成功核查 → resolve**"，`evidence_seq` 必须晚于声明，否则被拒）、`resolve_failure`（解释**非读取类**任务失败，不代表重试成功，且不豁免门禁）。1.1.8 起不确定性声明可写成 Markdown 形式，例如 `**未验证：X**` 也会被记账（尾随 `**` 自动剥离）。 |
+| **⑦ 审计读取工具** | `sbjw(detail:true)` 查看：`pending mutation verification`、逐条 mutation/check（含 `targets` 与 `source`）、`stale observations`、`unexplained failures`、`unknowns`、`counters`、跨重启 `history`；支持 `call_seq` 回看历史调用，**含脱敏后的原命令**。1.1.3 曾有临时 shell 查询运行时追踪，现已默认关闭（`diagnostics.runtimeShellTrace=false`）。 |
+| **⑧ 记账修复通道** | `sbjw_reconcile`：`declare_targets`（补录范围，且明确"**声明不是证据**"，之后必须独立回查）、`resolve_unknown`（顺序必须是"**声明 → 更新的成功核查 → resolve**"，`evidence_seq` 必须晚于声明，否则被拒）、`resolve_failure`（解释**非读取类**任务失败，不代表重试成功，且不豁免门禁）。1.1.8 起不确定性声明可写成 Markdown 形式，例如 `**未验证：X**` 也会被记账（尾随 `**` 自动剥离）。 |
 | **⑨ 循环 / 停滞防护** | 相同命令重复、语义重复、盲重试、无进展（stall）、no-op shell 都会被识别；**只有新信息才算进展**，重复读取不算。**已知粗糙处**：它对"只读调查"也不敏感——我连续 6 次只读检索（读配置/读 schema）就被警告"6 calls 无进展"。 |
 | **⑩ 新鲜度门（Freshness Gate）** | 对"外部事实"类声明（版本、发布、可用性等）要求会话内做过相关检索；1.1.2 起按**主题**记录检索时间并要求主题词重合，无关检索不能算。**此条目前只验证到计数器与代码结构，语义未做端到端测试**。 |
 | **⑪ 跨重启审计留痕** | 把**计数收据**写进 profile（`history.storage: profile`、`resetCount` 增长），并明确记录 **`reset is NOT resolved / 重置不等于解决`**。 |
-| **⑫ 策略段注入** | 通过 `prompt.js` 的 `reliability-guard:policy` 注入**前缀稳定**的 system prompt 段。1.1.6 起默认 `minimal`（**804 字符 / 104 words**）；`compact` 仍可选（2769 字符 / 443 words，12 条详细规则）；`full` 再附 verification matrix。前缀稳定是为了吃满宿主的前缀缓存。 |
+| **⑫ 策略段注入** | 通过 `prompt.js` 的 `sbjw:policy` 注入**前缀稳定**的 system prompt 段。1.1.6 起默认 `minimal`（**804 字符 / 104 words**）；`compact` 仍可选（2769 字符 / 443 words，12 条详细规则）；`full` 再附 verification matrix。前缀稳定是为了吃满宿主的前缀缓存。 |
 
 ---
 

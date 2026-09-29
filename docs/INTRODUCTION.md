@@ -1,4 +1,4 @@
-# DSH Reliability Guard: Capabilities, Boundaries, and Token Cost (1.1.8)
+# Cyber Internal Affairs: Capabilities, Boundaries, and Token Cost (1.1.9)
 
 > This document describes **1.1.8**. Every statement about behaviour is backed either by the plugin's own ledger output or by the host's per-request usage accounting (tokens, cache hit rate, settled cost), captured in a real DSH Desktop session.
 
@@ -6,7 +6,7 @@
 
 **It does not make the model smarter. It adds accountability.**
 
-Instead of accepting "I verified it" as a claim, Reliability Guard turns verification into **target-matched, auditable observations recorded in a ledger**, and prevents a turn from completing when the available evidence is insufficient.
+Instead of accepting "I verified it" as a claim, Cyber Internal Affairs turns verification into **target-matched, auditable observations recorded in a ledger**, and prevents a turn from completing when the available evidence is insufficient.
 
 In short, it is a layer around the Agent loop:
 
@@ -30,7 +30,7 @@ One 1.1.8 fact worth stating up front: the **core semantics (risk, ledger, recei
 
 ---
 
-## 3. Capabilities Confirmed in Real Testing (1.1.8)
+## 3. Capabilities Confirmed in Real Testing (1.1.9)
 
 > The capabilities below were observed and verified through ledger evidence during real sessions.
 
@@ -42,12 +42,12 @@ One 1.1.8 fact worth stating up front: the **core semantics (risk, ledger, recei
 | **④ Verification Coverage** | A verification counts only when it is **target-matched + sufficiently strong + later than the mutation**. Writes and reads require `read-back` (a native `read` already carries its target). **Deletion requires `absence` evidence**: bare `Test-Path -LiteralPath '<literal>' → False`, an exact `Get-Item` not-found, or a parent re-list combined with precise stat. Example: `check #22: absence PASS; strong=true; targets=[{…, "expected":"absent", "source":"shell-false"}]` with `covering verification: 22`. **Ordering matters**: the covering check must be a separate call that starts after the mutation; a read launched in the same parallel batch does not count. |
 | **⑤ Completion Gate** | Before a turn may finish, the gate checks for uncovered mutations, unexplained failures, unresolved unknowns, and unreviewed high-risk changes. If any remain it **injects an explicit instruction into the conversation** (by default at most one injection per turn, without attaching the full evidence digest), naming the gap and the concrete remediation. Since 1.1.8 the wording no longer says "has not run" but "no PASS/FAIL verdict is recorded yet; a review launched this turn may land at turn end". |
 | **⑥ Mandatory Independent Review** | High-risk mutations, especially deletions, require a fresh-context reviewer that must return `VERDICT: PASS\|FAIL`. A FAIL becomes an **unresolved objection**. Default `maxRounds=1`. In this line of work seven reviews returned PASS (and several earlier rounds returned FAIL), including one where the reviewer **independently corrected the author's byte-count misstatement** and one where it unpacked the session transcript, reconstructed the deleted content and produced a SHA256. |
-| **⑦ Audit Inspection Tooling** | `reliability_guard(detail:true)` exposes `pending mutation verification`, per-entry mutation/check records including `targets` and `source`, `stale observations`, `unexplained failures`, `unknowns`, `counters`, and cross-restart `history`. `call_seq` inspects previous calls including the **redacted original command**. The temporary runtime shell-query trace shipped in 1.1.3 is off by default (`diagnostics.runtimeShellTrace=false`). |
-| **⑧ Ledger Reconciliation** | `reliability_guard_reconcile` supports `declare_targets` (supplements scope while stating that **a declaration is not evidence**), `resolve_unknown`, and `resolve_failure`. `resolve_unknown` requires the order **"declaration → newer passing check → resolve"**, with `evidence_seq` later than the declaration (otherwise the call is rejected). `resolve_failure` explains **non-read** task failures, does not mean the operation succeeded, and does not bypass gates. Since 1.1.8, Markdown-wrapped uncertainty declarations such as `**unverified: X**` are also recorded (the trailing `**` is stripped). |
+| **⑦ Audit Inspection Tooling** | `sbjw(detail:true)` exposes `pending mutation verification`, per-entry mutation/check records including `targets` and `source`, `stale observations`, `unexplained failures`, `unknowns`, `counters`, and cross-restart `history`. `call_seq` inspects previous calls including the **redacted original command**. The temporary runtime shell-query trace shipped in 1.1.3 is off by default (`diagnostics.runtimeShellTrace=false`). |
+| **⑧ Ledger Reconciliation** | `sbjw_reconcile` supports `declare_targets` (supplements scope while stating that **a declaration is not evidence**), `resolve_unknown`, and `resolve_failure`. `resolve_unknown` requires the order **"declaration → newer passing check → resolve"**, with `evidence_seq` later than the declaration (otherwise the call is rejected). `resolve_failure` explains **non-read** task failures, does not mean the operation succeeded, and does not bypass gates. Since 1.1.8, Markdown-wrapped uncertainty declarations such as `**unverified: X**` are also recorded (the trailing `**` is stripped). |
 | **⑨ Loop and Stall Protection** | Byte-identical repeats, argument-normalized semantic repeats, no-op shell calls, blind retries and no-progress stalls are detected. **Only genuinely new information counts as progress**; repeated reads do not. **Known roughness:** the heuristic is insensitive to read-only investigation — six consecutive read-only inspection calls were flagged as "6 calls in a row produced no observable progress". |
 | **⑩ Freshness Gate** | Claims about external facts (versions, releases, availability) require relevant retrieval in the session. Since 1.1.2 freshness is tracked **by topic** and the retrieved topic must overlap with the claim; unrelated retrieval does not count. Verified at counter and code-structure level only — not yet through full semantic end-to-end testing. |
 | **⑪ Cross-restart Audit Receipts** | Count-based receipts are stored in the profile (`history.storage: profile`, `resetCount` grows), and the plugin states explicitly that **`reset is NOT resolved`** — resetting state does not mean earlier unresolved items were solved. |
-| **⑫ Policy Injection** | `prompt.js` injects a **prefix-stable** system-prompt section named `reliability-guard:policy` (prefix stability is deliberate, so the host's prefix cache can absorb it). Since 1.1.6 the default is `minimal` (**804 characters / 104 words**); `compact` (2769 characters / 443 words, twelve detailed rules) and `full` (adds the verification matrix) remain available. |
+| **⑫ Policy Injection** | `prompt.js` injects a **prefix-stable** system-prompt section named `sbjw:policy` (prefix stability is deliberate, so the host's prefix cache can absorb it). Since 1.1.6 the default is `minimal` (**804 characters / 104 words**); `compact` (2769 characters / 443 words, twelve detailed rules) and `full` (adds the verification matrix) remain available. |
 
 ---
 
@@ -74,7 +74,7 @@ These boundaries come from both the documented limits and observed behaviour.
 
 ## 5. What It Actually Helped With
 
-During development, Reliability Guard effectively pushed the plugin itself from `1.0.5` through `1.1.8`. Real issues uncovered and reproduced, all from the plugin's own ledger output:
+During development, Cyber Internal Affairs effectively pushed the plugin itself from `1.0.5` through `1.1.9`. Real issues uncovered and reproduced, all from the plugin's own ledger output:
 
 - **Silent deletions not entering the ledger** (1.0.5)
 - **Comma-separated multi-target operations producing zero targets** (1.0.6)
@@ -92,13 +92,13 @@ The process also produced a reusable acceptance workflow, and the plugin's own d
 .scratch\acceptance\run-acceptance.ps1
 ```
 
-So Reliability Guard is not only a mechanism for blocking unsafe completion; it is gradually becoming **reliability acceptance infrastructure**.
+So Cyber Internal Affairs is not only a mechanism for blocking unsafe completion; it is gradually becoming **reliability acceptance infrastructure**.
 
 ---
 
 ## 6. Who It Is For
 
-Reliability Guard is designed for:
+Cyber Internal Affairs is designed for:
 
 > **Agents performing dangerous, irreversible, or audit-sensitive operations.**
 

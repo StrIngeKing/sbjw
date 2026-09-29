@@ -36,23 +36,23 @@ test('both tools register when the guard predates the tools service and survive 
   await first
   const harness = await mountAgentLoopTestHarness(ctx)
   const agent = await createAgent(harness, 'existing-before-remount')
-  for (const name of ['reliability_guard', 'reliability_guard_reconcile']) assert.equal(ctx.tools.get(name).parameters.type, 'object')
-  assert.match(resultText(await callTool(ctx, 'reliability_guard', {}, { agent })), /toolsRegistered: true/)
+  for (const name of ['sbjw', 'sbjw_reconcile']) assert.equal(ctx.tools.get(name).parameters.type, 'object')
+  assert.match(resultText(await callTool(ctx, 'sbjw', {}, { agent })), /toolsRegistered: true/)
   await first.dispose()
-  assert.equal(ctx.tools.get('reliability_guard'), undefined)
+  assert.equal(ctx.tools.get('sbjw'), undefined)
   await ctx.plugin(Guard, {})
-  assert.match(resultText(await callTool(ctx, 'reliability_guard', {}, { agent })), /toolsRegistered: true/)
-  const repair = await callTool(ctx, 'reliability_guard_reconcile', { action: 'resolve_failure', failure_id: 'nonexistent', resolution: 'unrelated', reason: 'Validation probe' }, { agent })
+  assert.match(resultText(await callTool(ctx, 'sbjw', {}, { agent })), /toolsRegistered: true/)
+  const repair = await callTool(ctx, 'sbjw_reconcile', { action: 'resolve_failure', failure_id: 'nonexistent', resolution: 'unrelated', reason: 'Validation probe' }, { agent })
   assert.match(resultText(repair), /Failure id was not found/)
   assert.doesNotMatch(resultText(repair), /unknown tool/i)
-  assert.ok(ctx.logger.at('info').some(line => line.includes('registration success: reliability_guard')))
+  assert.ok(ctx.logger.at('info').some(line => line.includes('registration success: sbjw')))
 })
 
 test('diagnostics-disabled registration is logged as skipped, not success', async t => {
   const p = await mountGuardHarness({ config: { diagnostics: { enabled: false } } })
   t.after(() => p.ctx.fiber.dispose())
-  assert.equal(p.ctx.tools.get('reliability_guard'), undefined)
-  assert.ok(p.ctx.tools.get('reliability_guard_reconcile'))
+  assert.equal(p.ctx.tools.get('sbjw'), undefined)
+  assert.ok(p.ctx.tools.get('sbjw_reconcile'))
   assert.ok(p.logger.at('info').some(line => /skipped.*diagnostics disabled/.test(line)))
 })
 
@@ -65,8 +65,8 @@ test('a replacement real tool service registers both tools for an already live s
   await replacement
   await new Promise(resolve => setImmediate(resolve))
   assert.notEqual(p.ctx.tools, old)
-  assert.match(resultText(await callTool(p.ctx, 'reliability_guard', {}, { agent: a })), /toolsRegistered: true/)
-  assert.ok(p.ctx.tools.get('reliability_guard_reconcile'))
+  assert.match(resultText(await callTool(p.ctx, 'sbjw', {}, { agent: a })), /toolsRegistered: true/)
+  assert.ok(p.ctx.tools.get('sbjw_reconcile'))
 })
 
 test('turn reset archives dropped obligations and keeps already resolved work out of reset totals', async t => {
@@ -91,14 +91,14 @@ test('a real unexplained tool failure can be explained without waiving mutation 
   await callTool(p.ctx, 'probe_echo', { text: 'Optional unrelated discovery failed', fail: true }, { agent: a })
   const s = bucket(p, a), failure = s.unexplainedFailures[0]
   assert.ok(failure.id)
-  assert.match(resultText(await callTool(p.ctx, 'reliability_guard', { detail: true }, { agent: a })), new RegExp(failure.id))
-  const result = await callTool(p.ctx, 'reliability_guard_reconcile', { action: 'resolve_failure', failure_id: failure.id, resolution: 'unrelated', reason: 'The recorded error came from optional discovery; the required local write did succeed and still needs read-back.' }, { agent: a })
+  assert.match(resultText(await callTool(p.ctx, 'sbjw', { detail: true }, { agent: a })), new RegExp(failure.id))
+  const result = await callTool(p.ctx, 'sbjw_reconcile', { action: 'resolve_failure', failure_id: failure.id, resolution: 'unrelated', reason: 'The recorded error came from optional discovery; the required local write did succeed and still needs read-back.' }, { agent: a })
   assert.equal(result.isError, false, resultText(result))
   assert.equal(s.unexplainedFailures.length, 0)
   assert.equal(s.failures.size, 0)
   assert.equal(new EvidenceLedger(s).pendingMutations().length, 1)
   assert.equal(s.resolvedFailures[0].resolutionSource, 'caller explanation; not verified success')
-  assert.match(resultText(await callTool(p.ctx, 'reliability_guard', { detail: true }, { agent: a })), /已解释失败/)
+  assert.match(resultText(await callTool(p.ctx, 'sbjw', { detail: true }, { agent: a })), /已解释失败/)
 })
 
 test('failure explanations require valid IDs, reasons, resolution and real evidence when cited', () => {
@@ -161,7 +161,7 @@ test('profile checkpoint survives a separate process and reports RESET, not RESO
   store.save(s)
   const again = createSessionState('restart-session'); new Checkpoints(dir, recordingLogger()).load(again)
   assert.equal(again.history.resetCount, 1, 'restarting twice must not recount the same receipt')
-  const folder = join(dir, 'reliability-guard', 'checkpoints')
+  const folder = join(dir, 'sbjw', 'checkpoints')
   assert.doesNotMatch(readFileSync(join(folder, readdirSync(folder)[0]), 'utf8'), /private-secret-command|dynamic target|restart-session/)
 })
 
@@ -173,7 +173,7 @@ test('live pipeline writes unresolved counts under profile and reports them afte
   assert.ok(bucket(p, a).unresolvedMutationCount >= 1)
   await p.guardFiber.dispose()
   await p.ctx.plugin(Guard, {})
-  const diag = resultText(await callTool(p.ctx, 'reliability_guard', {}, { agent: a }))
+  const diag = resultText(await callTool(p.ctx, 'sbjw', {}, { agent: a }))
   assert.match(diag, /toolsRegistered: true/)
   assert.match(diag, /"status":"reset"/)
   assert.equal(bucket(p, a).history.reset.risks, 1)
@@ -184,7 +184,7 @@ test('missing profile, older history and corrupt checkpoints are explicit, not e
   assert.equal(noProfile.history.storage, 'unavailable')
   const dir = temp(t), store = new Checkpoints(dir, recordingLogger()), s = createSessionState('corrupt')
   store.load(s); assert.equal(s.history.status, 'history-unavailable'); store.save(s)
-  const folder = join(dir, 'reliability-guard', 'checkpoints'), file = join(folder, readdirSync(folder)[0])
+  const folder = join(dir, 'sbjw', 'checkpoints'), file = join(folder, readdirSync(folder)[0])
   writeFileSync(file, '{corrupt')
   const next = createSessionState('corrupt'); store.load(next); store.save(next)
   assert.equal(next.history.storage, 'error')
@@ -209,7 +209,7 @@ test('a pending in-flight operation survives restart but covered changes do not 
 test('failed profile writes are visible and never advertised as durable', t => {
   const dir = temp(t), logger = recordingLogger(), store = new Checkpoints(dir, logger), state = createSessionState('blocked-storage')
   store.load(state)
-  writeFileSync(join(dir, 'reliability-guard'), 'a non-directory fixture')
+  writeFileSync(join(dir, 'sbjw'), 'a non-directory fixture')
   store.save(state)
   assert.equal(state.history.storage, 'error')
   assert.ok(logger.at('warn').some(line => /write failed/.test(line)))

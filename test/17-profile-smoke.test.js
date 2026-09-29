@@ -2,7 +2,7 @@
  * Profile smoke check.
  *
  * This is the one test that exercises the **installed** artifact rather than the
- * working tree: it imports `dsh-reliability-guard` from a real DSH profile's
+ * working tree: it imports `sbjw` from a real DSH profile's
  * `node_modules` (populated by `dsh plugin --profile <name> add <tarball>`) and
  * unwraps it exactly the way the Cordis loader does, so a broken `files` list, a
  * missing entry point, or an unparsable patch is caught here.
@@ -100,27 +100,27 @@ test(
         : false,
   },
   async (t) => {
-    const packageDir = join(profileDir, 'node_modules', 'dsh-reliability-guard')
-    assert.ok(existsSync(packageDir), `the profile does not contain an installed dsh-reliability-guard at ${packageDir}`)
+    const packageDir = join(profileDir, 'node_modules', 'sbjw')
+    assert.ok(existsSync(packageDir), `the profile does not contain an installed sbjw at ${packageDir}`)
 
     // 1. The bundle marker and patch are present in the INSTALLED copy.
     const manifest = JSON.parse(readFileSync(join(packageDir, 'package.json'), 'utf8'))
-    assert.equal(manifest.name, 'dsh-reliability-guard')
+    assert.equal(manifest.name, 'sbjw')
     assert.equal(manifest.dsh?.bundle?.patch, './cordis.patch.yml')
     const patch = readFileSync(join(packageDir, 'cordis.patch.yml'), 'utf8')
-    assert.match(patch, /id: reliability-guard/)
-    for (const file of ['lib/index.js', 'locale/en.json', 'locale/zh.json', 'README.md', 'CHANGELOG.md', 'LICENSE']) {
+    assert.match(patch, /id: sbjw/)
+    for (const file of ['lib/index.js', 'locale/en.json', 'locale/zh.json', 'README.md', 'README.zh-CN.md', 'CHANGELOG.md', 'LICENSE']) {
       assert.ok(existsSync(join(packageDir, file)), `the tarball must ship ${file}`)
     }
     const enMeta = JSON.parse(readFileSync(join(packageDir, 'locale', 'en.json'), 'utf8')).meta
     const zhMeta = JSON.parse(readFileSync(join(packageDir, 'locale', 'zh.json'), 'utf8')).meta
-    assert.equal(enMeta.title, 'Reliability Guard / 可靠性守卫')
-    assert.equal(zhMeta.title, '可靠性守卫 / Reliability Guard')
+    assert.equal(enMeta.title, 'Cyber Internal Affairs')
+    assert.equal(zhMeta.title, '赛博纪委')
 
     // 2. The profile really lists the bundle, so the loader would compose it.
     const profileManifest = JSON.parse(readFileSync(join(profileDir, 'package.json'), 'utf8'))
     assert.ok(
-      profileManifest.dsh?.profile?.bundles?.includes('dsh-reliability-guard'),
+      profileManifest.dsh?.profile?.bundles?.includes('sbjw'),
       'the installed bundle must appear in dsh.profile.bundles',
     )
 
@@ -138,7 +138,7 @@ test(
     })
     const namespace = await import(pathToFileURL(join(packageDir, 'lib', 'index.js')).href)
     const plugin = unwrapExports(namespace)
-    assert.equal(plugin.name, 'reliability-guard')
+    assert.equal(plugin.name, 'sbjw')
     assert.deepEqual([...plugin.inject], ['tools'])
     assert.equal(typeof plugin.apply, 'function')
     assert.equal(typeof plugin.Config, 'function', 'the installed Config schema must resolve')
@@ -150,19 +150,19 @@ test(
     await mountAgentLoopTestDependencies(ctx)
     await ctx.plugin(plugin, {})
     assert.equal(ctx.fiber.state, 2, 'the guard fiber must be ACTIVE, not withheld')
-    const diagnosticsSchema = ctx.tools.schemas(undefined).find((schema) => schema.name === 'reliability_guard')
+    const diagnosticsSchema = ctx.tools.schemas(undefined).find((schema) => schema.name === 'sbjw')
     assert.equal(
       diagnosticsSchema?.parameters?.type,
       'object',
       'the packed plugin must expose an object-root JSON Schema to model providers',
     )
     assert.equal(diagnosticsSchema?.parameters?.properties?.detail?.type, 'boolean')
-    assert.equal(ctx.tools.schemas(undefined).find(s => s.name === 'reliability_guard_reconcile')?.parameters?.type, 'object')
+    assert.equal(ctx.tools.schemas(undefined).find(s => s.name === 'sbjw_reconcile')?.parameters?.type, 'object')
 
     // 6. Its prompt section is really registered by the installed copy.
     const assembly = await ctx.systemPrompt.assemble({})
     assert.ok(
-      assembly.sections.some((section) => section.name === 'reliability-guard:policy'),
+      assembly.sections.some((section) => section.name === 'sbjw:policy'),
       'the installed copy must register the policy section',
     )
 
@@ -177,7 +177,7 @@ test(
       assistantMessageData('Status.\nunknown: whether the smoke profile pins the expected version.\n'),
     )
     const result = await ctx.tools.execute({
-      name: 'reliability_guard',
+      name: 'sbjw',
       callId: 'smoke-diagnostics',
       arguments: { detail: true },
       signal: new AbortController().signal,
@@ -185,10 +185,10 @@ test(
     })
     assert.equal(result.isError, false, 'the installed diagnostics tool must answer')
     const text = (result.content ?? []).map((part) => part.text).join('\n')
-    assert.match(text, /reliability-guard diagnostics/)
+    assert.match(text, /sbjw diagnostics/)
     assert.match(text, /toolsRegistered: true/)
     assert.match(text, /"storage":"profile"/)
-    assert.ok(ctx.tools.schemas(undefined).find(s => s.name === 'reliability_guard_reconcile').parameters.properties.action.enum.includes('resolve_failure'))
+    assert.ok(ctx.tools.schemas(undefined).find(s => s.name === 'sbjw_reconcile').parameters.properties.action.enum.includes('resolve_failure'))
     assert.match(text, /smoke-agent/, 'the report must be scoped to the calling session')
     assert.ok(text.includes(`plugin version / 插件版本: ${manifest.version}`))
 
@@ -242,7 +242,7 @@ test(
       const recovery = new ScriptedAdapter([
         [tool('recovery-write', 'write', { file_path: 'recover.txt', content: 'fixture' })],
         [tool('recovery-delete', 'pwsh', { command: "$f=Join-Path . 'recover.txt'; Remove-Item $f", description: plan })],
-        [tool('recovery-scope', 'reliability_guard_reconcile', { action: 'declare_targets', call_seq: 2, targets: [{ path: 'recover.txt', expected: 'absent' }], reason: 'The original command joined cwd with recover.txt; this is the full affected scope.' })],
+        [tool('recovery-scope', 'sbjw_reconcile', { action: 'declare_targets', call_seq: 2, targets: [{ path: 'recover.txt', expected: 'absent' }], reason: 'The original command joined cwd with recover.txt; this is the full affected scope.' })],
         [tool('recovery-verify', 'pwsh', { command: 'Get-ChildItem -LiteralPath . -Force' })],
         [tool('recovery-review', 'subagent', { report: 'VERDICT: PASS' })], done,
       ])

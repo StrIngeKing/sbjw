@@ -202,7 +202,7 @@ test('an edit call on a real file completes without an import or read failure', 
   )
   assert.equal(result.isError, false, `the edit must reach the tool body: ${resultText(result)}`)
   assert.match(resultText(result), /edited \/work\/crlf\.txt/)
-  assert.equal(result.content.some((part) => String(part.text).includes('Reliability Guard')), false, 'guard prose must not enter the tool result')
+  assert.equal(result.content.some((part) => String(part.text).includes('Cyber Internal Affairs')), false, 'guard prose must not enter the tool result')
 })
 
 test('a shell mutation is observed through the file version, not the tool name', async (t) => {
@@ -267,7 +267,7 @@ test('a shell mutation is observed through the file version, not the tool name',
   // The call changed the version of a path it named, so the guard records a
   // mutation even though `pwsh` is not a tool the classifier knows as a writer.
   // The diagnostics report is the observable surface for that record.
-  const report = resultText(await callTool(ctx, 'reliability_guard', { detail: true }, { agent }))
+  const report = resultText(await callTool(ctx, 'sbjw', { detail: true }, { agent }))
   assert.match(report, /mutations: 1 file\(s\) this session/, `an observed shell mutation must be recorded: ${report}`)
 })
 

@@ -168,7 +168,7 @@ test('renderDiagnostics reports a bounded, counter-only snapshot', () => {
   const report = reportFor(state)
   assert.equal(report.version, DIAGNOSTICS_VERSION)
   const rendered = renderDiagnostics(report)
-  assert.match(rendered, /^reliability-guard diagnostics v1 \(/)
+  assert.match(rendered, /^sbjw diagnostics v1 \(/)
   assert.match(rendered, /mode: balanced — identical-repeat block at 5/)
   assert.match(rendered, /session: diagnostics-session/)
   assert.match(rendered, /session calls: 3; risk counts: \{"UNKNOWN":0,"LOW":0,"MEDIUM":1,"HIGH":0,"CRITICAL":0\}/)
@@ -186,7 +186,7 @@ test('renderDiagnostics reports a bounded, counter-only snapshot', () => {
   assert.ok(capped.length <= 4000, `the rendered report must stay bounded, got ${capped.length}`)
 })
 
-test('the reliability_guard tool reports counters without leaking tool arguments', async (t) => {
+test('the sbjw tool reports counters without leaking tool arguments', async (t) => {
   const probe = await mountGuardHarness()
   t.after(() => probe.ctx.fiber.dispose())
   const agent = await createAgent(probe.harness, 'diagnostics-pipeline')
@@ -195,7 +195,7 @@ test('the reliability_guard tool reports counters without leaking tool arguments
   const write = await callTool(
     probe.ctx,
     'write',
-    { file_path: '/tmp/reliability-guard-diag.txt', content: 'safe', justification: `rotate ${SECRET}; verification: rerun node --test` },
+    { file_path: '/tmp/sbjw-diag.txt', content: 'safe', justification: `rotate ${SECRET}; verification: rerun node --test` },
     { agent },
   )
   assert.equal(write.isError, false, 'the call under test must actually run')
@@ -203,7 +203,7 @@ test('the reliability_guard tool reports counters without leaking tool arguments
   assert.ok(recorded.argumentsPreview.includes('<redacted:'), 'the guard redacts the preview before it stores it')
   assert.ok(!recorded.argumentsPreview.includes(SECRET), 'the raw credential is never retained in session state')
 
-  const rendered = resultText(await callTool(probe.ctx, 'reliability_guard', { detail: true }, { agent }))
+  const rendered = resultText(await callTool(probe.ctx, 'sbjw', { detail: true }, { agent }))
   assert.match(rendered, /session calls: 2/)
   assert.match(rendered, /counters: [^\n]*preExecuteChecked=2/)
   assert.ok(!rendered.includes(SECRET), 'the rendered report must never carry the credential')
@@ -219,8 +219,8 @@ test('a delivered user request never appears in the diagnostics report', async (
   deliverSessionEvent(probe.ctx, agent, 'user/message', userMessage(REQUEST_TEXT))
   assert.equal(bucket.requirement, REQUEST_TEXT, 'the guard does record the request, so its absence below is meaningful')
 
-  await callTool(probe.ctx, 'write', { file_path: '/tmp/reliability-guard-diag.txt', content: 'safe' }, { agent })
-  const rendered = resultText(await callTool(probe.ctx, 'reliability_guard', { detail: true }, { agent }))
+  await callTool(probe.ctx, 'write', { file_path: '/tmp/sbjw-diag.txt', content: 'safe' }, { agent })
+  const rendered = resultText(await callTool(probe.ctx, 'sbjw', { detail: true }, { agent }))
   assert.ok(rendered.includes('session: diagnostics-request'), 'the report is about this session')
   assert.ok(!rendered.includes(REQUEST_TEXT), 'raw request text is never part of the report, even with detail enabled')
 })
@@ -238,10 +238,10 @@ test('argument previews stay out of the model-visible report and appear only whe
   await callTool(
     probe.ctx,
     'write',
-    { file_path: '/tmp/reliability-guard-diag.txt', content: 'safe', justification: `rotate ${SECRET}` },
+    { file_path: '/tmp/sbjw-diag.txt', content: 'safe', justification: `rotate ${SECRET}` },
     { agent },
   )
-  const rendered = resultText(await callTool(probe.ctx, 'reliability_guard', { detail: true }, { agent }))
+  const rendered = resultText(await callTool(probe.ctx, 'sbjw', { detail: true }, { agent }))
   assert.match(rendered, /counters:/)
   assert.ok(!rendered.includes(SECRET), 'enabling the option must never print a raw credential')
   assert.ok(!rendered.includes('rotate'), 'the rendered report never quotes the argument preview')
@@ -270,7 +270,7 @@ test('a failure description is redacted before it reaches the report', async (t)
   const failed = await callTool(probe.ctx, 'probe_echo', { text: `boom: could not read config token=${SECRET}`, fail: true }, { agent })
   assert.equal(failed.isError, true, 'the call must really fail for its text to be recorded')
 
-  const rendered = resultText(await callTool(probe.ctx, 'reliability_guard', { detail: true }, { agent }))
+  const rendered = resultText(await callTool(probe.ctx, 'sbjw', { detail: true }, { agent }))
   assert.match(rendered, /open failures: /, 'an unexplained failure is reported so the operator can act on it')
   assert.match(rendered, /<redacted:[0-9a-f]{8}>/, 'the credential in the failure text is redacted in place')
   assert.ok(!rendered.includes(SECRET), 'the raw credential never reaches the report')

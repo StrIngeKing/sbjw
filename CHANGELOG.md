@@ -1,7 +1,28 @@
 # Changelog
 
-All notable changes to `dsh-reliability-guard` are documented here. This
+## 1.2.0
+
+- 完成“赛博纪委 / Cyber Internal Affairs”运行时标识迁移：DSH bundle/component id、Cordis plugin name、prompt section、message source kind、诊断/修复工具名与错误码前缀统一使用 `sbjw`。
+- DSH 插件详情页不再显示旧组件名 `reliability-guard`。
+- 新工具名为 `sbjw` 与 `sbjw_reconcile`。这是一次有意的 1.2.0 兼容性变更。
+- checkpoint 新写入 `<profile>/sbjw/checkpoints`；读取时仍兼容旧 `<profile>/reliability-guard/checkpoints`，用于一次性继承历史 reset 计数。
+- 历史 CHANGELOG / validation 文档保留旧名称以忠实记录旧版本。
+
+
+All notable changes to `sbjw` (赛博纪委 / Cyber Internal Affairs) are documented here. This
 project follows [Semantic Versioning](https://semver.org/).
+
+## [1.1.9] — 2026-09-29
+
+### Project rebrand / 项目改名
+
+- 项目公开名称改为 **赛博纪委 / Cyber Internal Affairs**；npm 包名改为 **`sbjw`**。
+- DSH 本地化元数据改为按界面语言显示：中文 `赛博纪委`，英文 `Cyber Internal Affairs`；插件详情页使用独立中英文介绍。
+- README 拆分为 `README.md`（English）与 `README.zh-CN.md`（简体中文），不再在同一文件逐段中英混排，并显著压缩篇幅。
+- `cordis.patch.yml` 的包名改为 `sbjw`；`package.json`、发布校验、当前文档、日志/诊断公开品牌和安装示例同步改名。
+- 为避免破坏既有 profile、checkpoint、工具调用和外部集成，`reliability-guard` bundle id、`reliability_guard*` 工具名、`reliability-guard:policy` prompt section、既有错误码/存储兼容键继续保留。
+- 历史版本验证文档中的旧包名属于当时真实工件记录，未伪造改写。
+
 
 ## [1.1.8] — 2026-09-29
 

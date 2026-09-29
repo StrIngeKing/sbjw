@@ -60,7 +60,7 @@ export async function runTurn(ctx, agent) {
 export function assertDeliveredOnce(events, adapter, tag, expectedCount = 1) {
   const inserted = events.filter(event => event.type === 'agent/inbox/spliced')
     .flatMap(event => event.data.inserted)
-    .filter(message => message.source?.kind === 'reliability-guard' && message.source.tag === tag)
+    .filter(message => message.source?.kind === 'sbjw' && message.source.tag === tag)
   assert.equal(inserted.length, expectedCount)
   assert.equal(new Set(inserted.map(message => message.id)).size, expectedCount)
   for (const notice of inserted) {

@@ -114,7 +114,7 @@ test(
     }
     const denied = await callTool(probe.ctx, 'probe_echo', { text: 'same' }, { agent })
     assert.equal(denied.isError, true)
-    assert.equal(denied.error.info.code, 'RELIABILITY_GUARD_REPEAT')
+    assert.equal(denied.error.info.code, 'SBJW_REPEAT')
     assert.match(resultText(denied), /Evidence: 5 consecutive byte-identical calls \(threshold 5\)/)
   },
 )
@@ -151,9 +151,9 @@ test('the identical-repeat detector blocks the configured run length', async (t)
 
   const denied = await callTool(probe.ctx, 'probe_echo', { text: 'same' }, { agent })
   assert.equal(denied.isError, true, 'the fifth identical call is the run the detector exists for')
-  assert.deepEqual(denied.error.info, { code: 'RELIABILITY_GUARD_REPEAT', source: 'reliability-guard' })
+  assert.deepEqual(denied.error.info, { code: 'SBJW_REPEAT', source: 'sbjw' })
   const text = resultText(denied)
-  assert.match(text, /Reliability Guard blocked this call/)
+  assert.match(text, /Cyber Internal Affairs blocked this call/)
   assert.match(text, /Evidence: 5 consecutive byte-identical calls \(threshold 5\)/, 'the denial must name its evidence')
   assert.match(text, /Read the previous result again/, 'the denial must state an actionable next step')
   assert.match(text, /change the arguments, change the approach, or report what blocked you/)
@@ -162,7 +162,7 @@ test('the identical-repeat detector blocks the configured run length', async (t)
   assert.equal(state.counters.blockedLoops, 1)
   assert.equal(state.counters.preExecuteChecked, 5, 'every attempt must pass through the guard')
   assert.equal(state.exactRun, 5)
-  assert.match(probe.logger.at('info').join('\n'), /reliability-guard: repeat blocked:/, 'the block must be auditable')
+  assert.match(probe.logger.at('info').join('\n'), /sbjw: repeat blocked:/, 'the block must be auditable')
 })
 
 test('the identical-repeat threshold is configuration-driven', async (t) => {
@@ -176,7 +176,7 @@ test('the identical-repeat threshold is configuration-driven', async (t) => {
   }
   const denied = await callTool(probe.ctx, 'probe_echo', { text: 'cfg' }, { agent })
   assert.equal(denied.isError, true)
-  assert.equal(denied.error.info.code, 'RELIABILITY_GUARD_REPEAT')
+  assert.equal(denied.error.info.code, 'SBJW_REPEAT')
   assert.match(resultText(denied), /Evidence: 3 consecutive byte-identical calls \(threshold 3\)/)
 })
 
@@ -196,7 +196,7 @@ test('calls that differ only in whitespace or quoting are one semantic loop', as
 
   const denied = await callTool(probe.ctx, 'pwsh', { command: variants[2] }, { agent })
   assert.equal(denied.isError, true)
-  assert.equal(denied.error.info.code, 'RELIABILITY_GUARD_SEMANTIC_REPEAT')
+  assert.equal(denied.error.info.code, 'SBJW_SEMANTIC_REPEAT')
   const text = resultText(denied)
   assert.match(text, /Evidence: 3 argument-normalized identical calls \(threshold 3\)/)
   assert.match(text, /differ only in whitespace, quoting, or comments/)
@@ -205,7 +205,7 @@ test('calls that differ only in whitespace or quoting are one semantic loop', as
   const state = bucket(agent)
   assert.equal(state.semanticRun, 3)
   assert.equal(state.exactRun, 1, 'the three calls were never byte-identical, which is why the semantic detector exists')
-  assert.match(probe.logger.at('info').join('\n'), /reliability-guard: semantic-repeat blocked:/)
+  assert.match(probe.logger.at('info').join('\n'), /sbjw: semantic-repeat blocked:/)
 })
 
 test('the semantic detector also fires in the shipped default configuration', async (t) => {
@@ -221,7 +221,7 @@ test('the semantic detector also fires in the shipped default configuration', as
   }
   const denied = await callTool(probe.ctx, 'pwsh', { command: 'Get-Content "a.txt"' }, { agent })
   assert.equal(denied.isError, true)
-  assert.equal(denied.error.info.code, 'RELIABILITY_GUARD_SEMANTIC_REPEAT')
+  assert.equal(denied.error.info.code, 'SBJW_SEMANTIC_REPEAT')
 })
 
 test('a run of effect-free shell calls is denied at the no-op threshold', async (t) => {
@@ -240,12 +240,12 @@ test('a run of effect-free shell calls is denied at the no-op threshold', async 
 
   const denied = await callTool(probe.ctx, 'pwsh', { command: commands[2] }, { agent })
   assert.equal(denied.isError, true)
-  assert.equal(denied.error.info.code, 'RELIABILITY_GUARD_NO_OP_SHELL')
+  assert.equal(denied.error.info.code, 'SBJW_NO_OP_SHELL')
   const text = resultText(denied)
   assert.match(text, /Evidence: 3 consecutive no-op shell calls \(threshold 3\)/)
   assert.match(text, /Run a command that changes state or returns information the task needs/)
   assert.equal(bucket(agent).counters.noopShellBlocked, 1)
-  assert.match(probe.logger.at('info').join('\n'), /reliability-guard: no-op-shell blocked:/)
+  assert.match(probe.logger.at('info').join('\n'), /sbjw: no-op-shell blocked:/)
 })
 
 test('normal repetition is not a loop', async (t) => {

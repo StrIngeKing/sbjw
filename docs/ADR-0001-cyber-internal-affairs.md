@@ -1,4 +1,4 @@
-# ADR-0001 — Reliability Guard on the public DSH seams
+# ADR-0001 — Cyber Internal Affairs on the public DSH seams
 
 - **Status:** accepted
 - **Date:** 2026-01-01
